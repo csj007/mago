@@ -35,48 +35,66 @@ function submitRecord() {
         alert('请至少输入一个材料和克数！');
         return;
     }
+    fetch(API_URL, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.cookie.split('=')[1].split(';')[0]  // CSRF token
+        },
+        body: JSON.stringify({ materials: data })
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('网络请求失败');
+        }
+        return response.json();
+    })
+    .then(result => {
+        console.log('收到后端返回的药品编号:', result);
+        const table = document.getElementById('materials-table');
+        table.innerHTML = '';
 
-    // 表头行
-    const headerRow = document.createElement('tr');
-    headerRow.innerHTML = `<th>药品名称</th>`.repeat(data.length + 1);
-    table.appendChild(headerRow);
+        // 名称行
+        const namesRow = document.createElement('tr');
+        result.forEach(item => {
+            const td = document.createElement('td');
+            td.innerText = item.code;
+            namesRow.appendChild(td);
+        });
+        const totalNameTd = document.createElement('td');
+        totalNameTd.innerText = '总计';
+        namesRow.appendChild(totalNameTd);
+        table.appendChild(namesRow);
 
-    // 名称行
-    const namesRow = document.createElement('tr');
-    data.forEach(item => {
-        const td = document.createElement('td');
-        td.innerText = item.name;
-        namesRow.appendChild(td);
+        // 克数行
+        const valuesRow = document.createElement('tr');
+        data.forEach(item => {
+            const td = document.createElement('td');
+            td.innerText = item.amount;
+            valuesRow.appendChild(td);
+        });
+        const totalTd = document.createElement('td');
+        totalTd.innerText = data.reduce((sum, item) => sum + item.amount, 0);
+        valuesRow.appendChild(totalTd);
+        table.appendChild(valuesRow);
+
+        console.log('表格生成完成');
+
+        // 显示按钮
+        const actionButtons = document.getElementById('action-buttons');
+        if (actionButtons) {
+            actionButtons.style.display = 'block';
+            actionButtons.classList.remove('d-none');
+            console.log('action-buttons 元素:', actionButtons);
+            console.log('action-buttons 已显示');
+        } else {
+            console.error('未找到 action-buttons 元素，请检查 ID');
+        }
+    })
+    .catch(err => {
+        console.error('请求失败:', err);
+        alert('无法获取药品编号，请检查后端服务');
     });
-    const totalNameTd = document.createElement('td');
-    totalNameTd.innerText = '总计';
-    namesRow.appendChild(totalNameTd);
-    table.appendChild(namesRow);
-
-    // 克数行
-    const valuesRow = document.createElement('tr');
-    data.forEach(item => {
-        const td = document.createElement('td');
-        td.innerText = item.amount;
-        valuesRow.appendChild(td);
-    });
-    const totalTd = document.createElement('td');
-    totalTd.innerText = data.reduce((sum, item) => sum + item.amount, 0);
-    valuesRow.appendChild(totalTd);
-    table.appendChild(valuesRow);
-
-    console.log('表格生成完成');
-
-    // 显示按钮
-    const actionButtons = document.getElementById('action-buttons');
-    if (actionButtons) {
-        actionButtons.style.display = 'block';
-        actionButtons.classList.remove('d-none');
-        console.log('action-buttons 元素:', actionButtons);
-        console.log('action-buttons 已显示');
-    } else {
-        console.error('未找到 action-buttons 元素，请检查 ID');
-    }
 }
 
 // 复制表格为 Excel 可识别格式
