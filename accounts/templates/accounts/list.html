@@ -1,0 +1,38 @@
+<!-- accounts/templates/accounts/list.html -->
+{% extends "base.html" %}
+
+{% block title %}药品管理 - 列表{% endblock %}
+
+{% block content %}
+    <h3 class="mb-4">药品管理</h3>
+    <a href="{% url 'add_medicine' %}" class="btn btn-primary mb-3">新增药品</a>
+
+    <table class="table table-bordered table-hover">
+        <thead class="table-dark">
+            <tr>
+                <th scope="col">种类</th>
+                <th scope="col">名称</th>
+                <th scope="col">编号</th>
+                <th scope="col" style="width: 120px;">操作</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for medicine in medicines %}
+            <tr>
+                <td>{{ medicine.get_type_display }}</td>
+                <td>{{ medicine.name }}</td>
+                <td>{{ medicine.code }}</td>
+                <td>
+                    <a href="{% url 'edit_medicine' medicine.id %}" class="btn btn-sm btn-info">编辑</a>
+                    <form action="{% url 'delete_medicine' medicine.id %}" method="post" style="display:inline;">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('确定要删除吗？');">
+                            删除
+                        </button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}
