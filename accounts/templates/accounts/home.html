@@ -1,0 +1,84 @@
+<!-- templates/accounts/home.html -->
+{% load static %}
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>材料记录</title>
+    <!-- Bootstrap 5 CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- 自定义样式 -->
+    <style>
+        body {
+            padding: 20px;
+        }
+        .table td, .table th {
+            vertical-align: middle;
+            border: 1px solid #dee2e6 !important;
+            text-align: center;
+            padding: 8px;
+        }
+        .table thead th {
+            background-color: #f8f9fa;
+        }
+        .form-group {
+            margin-bottom: 10px;
+        }
+        .table {
+            border-collapse: collapse;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2 class="mb-4">添加材料</h2>
+        <div id="material-form">
+            <div class="row mb-2" id="material-row">
+                <div class="col-md-4">
+                    <input type="text" class="form-control" placeholder="药品名称" name="medicine[]">
+                </div>
+                <div class="col-md-4">
+                    <input type="number" class="form-control" placeholder="克数" name="amount[]">
+                </div>
+                <div class="col-md-2">
+                    <button class="btn btn-success" onclick="addRow()">添加材料</button>
+                </div>
+            </div>
+        </div>
+        <button onclick="testClipboard()">测试剪贴板</button>
+        <script>
+            function testClipboard() {
+                console.log('navigator.clipboard:', navigator.clipboard);
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText('Hello Clipboard API').then(() => {
+                        alert('写入成功');
+                    });
+                } else {
+                    alert('不支持剪贴板 API');
+                }
+            }
+        </script>
+        <button class="btn btn-primary mb-4" onclick="submitRecord()">提交记录</button>
+
+        <!-- 按钮容器，默认隐藏 -->
+        <div id="action-buttons" class="d-none mt-3">
+            <button class="btn btn-success" onclick="copyTable()">复制表格</button>
+            <button class="btn btn-info" onclick="copyTableAsImage()">复制图片</button>
+            <button class="btn btn-primary" onclick="downloadTableAsImage()">下载图片</button>
+        </div>
+
+        <h3 class="mb-3">材料记录</h3>
+        <table class="table table-bordered" id="materials-table">
+            <!-- 动态生成内容 -->
+        </table>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- dom-to-image CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dom-to-image/2.6.0/dom-to-image.min.js"></script>
+    <!-- 自定义 JS -->
+    <script src="{% static 'js/home.js' %}"></script>
+</body>
+</html>
