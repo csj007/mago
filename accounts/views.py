@@ -5,7 +5,9 @@ from django.contrib import messages
 from .forms import LoginForm
 from .models import Medicine
 from .forms import MedicineForm
-
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+import json
 
 def user_login(request):
     if request.method == 'POST':
@@ -69,3 +71,29 @@ def delete_medicine(request, medicine_id):
         medicine.delete()
         return redirect('medicine_list')
     return render(request, 'accounts/delete.html', {'medicine': medicine})
+
+@csrf_exempt
+def get_medicine_codes(request):
+    if request.method == 'POST':
+        data = json.loads(request.body)
+        materials = data.get('materials', [])
+
+        result = []
+        for item in materials:
+            name = item.get('name', '').strip()
+            amount = item.get('amount', 0)
+
+            try:
+                medicine = Medicine.objects.get(name__iexact=name)
+                code = medicine.code  # 获取数据库中的编号
+            except Medicine.DoesNotExist:
+                code = name  # 如果找不到，就用用户输入的名称代替编号
+
+            result.append({
+                'name': name,
+                'code': code,
+                'amount': amount
+            })
+        print(result)
+        return JsonResponse(result, safe=False)
+    return JsonResponse({'error': '无效的请求'}, status=400)
