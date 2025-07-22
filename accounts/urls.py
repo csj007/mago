@@ -11,4 +11,5 @@ urlpatterns = [
     path('edit/<int:medicine_id>/', views.edit_medicine, name='edit_medicine'),
     path('delete/<int:medicine_id>/', views.delete_medicine, name='delete_medicine'),
     path('home/', views.home, name='home'),
+    path('api/get-medicine-codes/', views.get_medicine_codes, name='get_medicine_codes'),
 ]
