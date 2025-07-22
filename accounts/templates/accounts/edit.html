@@ -1,0 +1,14 @@
+<!-- accounts/templates/accounts/edit.html -->
+{% extends "base.html" %}
+
+{% block title %}编辑药品{% endblock %}
+
+{% block content %}
+    <h3 class="mb-4">编辑药品</h3>
+    <form method="post" class="mb-5">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit" class="btn btn-primary">更新</button>
+        <a href="{% url 'medicine_list' %}" class="btn btn-secondary">返回</a>
+    </form>
+{% endblock %}
