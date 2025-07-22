@@ -46,19 +46,6 @@
                 </div>
             </div>
         </div>
-        <button onclick="testClipboard()">测试剪贴板</button>
-        <script>
-            function testClipboard() {
-                console.log('navigator.clipboard:', navigator.clipboard);
-                if (navigator.clipboard && navigator.clipboard.writeText) {
-                    navigator.clipboard.writeText('Hello Clipboard API').then(() => {
-                        alert('写入成功');
-                    });
-                } else {
-                    alert('不支持剪贴板 API');
-                }
-            }
-        </script>
         <button class="btn btn-primary mb-4" onclick="submitRecord()">提交记录</button>
 
         <!-- 按钮容器，默认隐藏 -->
@@ -79,6 +66,9 @@
     <!-- dom-to-image CDN -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/dom-to-image/2.6.0/dom-to-image.min.js"></script>
     <!-- 自定义 JS -->
+    <script>
+        const API_URL = "{% url 'get_medicine_codes' %}";
+    </script>
     <script src="{% static 'js/home.js' %}"></script>
 </body>
 </html>
