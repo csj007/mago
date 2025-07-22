@@ -1,0 +1,14 @@
+<!-- accounts/templates/accounts/delete.html -->
+{% extends "base.html" %}
+
+{% block title %}删除药品{% endblock %}
+
+{% block content %}
+    <h3 class="mb-4">删除药品</h3>
+    <p class="mb-4">确定要删除药品 <strong>"{{ medicine.name }}"</strong> 吗？</p>
+    <form method="post">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-danger">确认删除</button>
+        <a href="{% url 'medicine_list' %}" class="btn btn-secondary">取消</a>
+    </form>
+{% endblock %}
