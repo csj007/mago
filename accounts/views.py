@@ -8,6 +8,7 @@ from .forms import MedicineForm
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 import json
+import os
 
 def user_login(request):
     if request.method == 'POST':
@@ -34,7 +35,23 @@ def user_logout(request):
 
 @login_required
 def home(request):
-    return render(request, 'accounts/home.html')
+    medicines = Medicine.objects.all()
+    data = [
+        {
+            'name': m.name,
+            'code': m.code,
+            'type': m.type,
+        } for m in medicines
+    ]
+    context = {
+        'medicines': medicines,
+    }
+    file_path = os.path.join(os.path.dirname(__file__), 'medicine_data.json')
+    with open(file_path, 'w', encoding='utf-8') as f:
+        json.dump(data, f, ensure_ascii=False, indent=4)
+    print(f"✔️ 药品数据已保存到 {file_path}")
+    
+    return render(request, 'accounts/home.html', context)
 
 @login_required
 def medicine_list(request):
@@ -94,6 +111,5 @@ def get_medicine_codes(request):
                 'code': code,
                 'amount': amount
             })
-        print(result)
         return JsonResponse(result, safe=False)
     return JsonResponse({'error': '无效的请求'}, status=400)
