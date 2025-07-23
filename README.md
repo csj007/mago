@@ -34,11 +34,13 @@ user = User.objects.get(username='zhangsan')
 group = Group.objects.get(name='普通用户')
 user.groups.add(group)
 
+
 home.html
 home.js
 views.py
 urls.py
 list.html
+settings.py
 
 
 pip install gunicorn
