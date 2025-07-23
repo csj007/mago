@@ -5,22 +5,30 @@ function addRow() {
     const row = document.getElementById('material-row').cloneNode(true);
     row.id = `material-row-${index}`;
     index += 1;
+
+    // 清空输入的值
     const inputs = row.querySelectorAll('input');
     inputs.forEach(input => {
         input.value = '';
     });
+
     document.getElementById('material-form').appendChild(row);
+}
+
+
+function deleteRow(button) {
+    const row = button.closest('.row');
+    if (row && row.id.startsWith('material-row-')) {
+        row.remove(); // 删除该行
+    } else if (row && row.id === 'material-row') {
+        alert('不能删除初始行！');
+    }
 }
 
 // 提交记录生成表格并显示按钮
 function submitRecord() {
-    console.log('submitRecord 函数开始执行');
-
     const rows = document.querySelectorAll('#material-form .row');
-    const table = document.getElementById('materials-table');
-    table.innerHTML = '';
     const data = [];
-
     rows.forEach(row => {
         const name = row.querySelector('input[name="medicine[]"]').value.trim();
         const amount = parseFloat(row.querySelector('input[name="amount[]"]').value) || 0;
@@ -28,144 +36,156 @@ function submitRecord() {
             data.push({ name: name, amount: amount });
         }
     });
-
-    console.log('收集到的数据:', data);
-
     if (data.length === 0) {
         alert('请至少输入一个材料和克数！');
         return;
     }
-    fetch(API_URL, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': document.cookie.split('=')[1].split(';')[0]  // CSRF token
-        },
-        body: JSON.stringify({ materials: data })
-    })
-    .then(response => {
-        if (!response.ok) {
-            throw new Error('网络请求失败');
-        }
-        return response.json();
-    })
-    .then(result => {
-        console.log('收到后端返回的药品编号:', result);
-        const table = document.getElementById('materials-table');
-        table.innerHTML = '';
 
-        // 名称行
-        const namesRow = document.createElement('tr');
-        result.forEach(item => {
-            const td = document.createElement('td');
-            td.innerText = item.code;
-            namesRow.appendChild(td);
-        });
-        const totalNameTd = document.createElement('td');
-        totalNameTd.innerText = '总计';
-        namesRow.appendChild(totalNameTd);
-        table.appendChild(namesRow);
+    // 生成两个表格
+    for (let i = 0; i < 2; i++) {
+        let tableId = `materials-table-${i}`;
+        let buttonsId = `action-buttons-${i}`;
 
-        // 克数行
-        const valuesRow = document.createElement('tr');
-        data.forEach(item => {
-            const td = document.createElement('td');
-            td.innerText = item.amount;
-            valuesRow.appendChild(td);
-        });
-        const totalTd = document.createElement('td');
-        totalTd.innerText = data.reduce((sum, item) => sum + item.amount, 0);
-        valuesRow.appendChild(totalTd);
-        table.appendChild(valuesRow);
+        // 创建表格
+        const table = document.createElement('table');
+        table.className = 'table table-bordered';
+        table.id = tableId;
 
-        console.log('表格生成完成');
+        // 创建按钮组
+        const buttons = document.createElement('div');
+        buttons.id = buttonsId;
+        buttons.className = 'd-none mt-3';
+        buttons.innerHTML = `
+            <button class="btn btn-success" onclick="copyTable(${i})">复制表格</button>
+            <button class="btn btn-info" onclick="copyTableAsImage(${i})">复制图片</button>
+            <button class="btn btn-primary" onclick="downloadTableAsImage(${i})">下载图片</button>
+        `;
 
-        // 显示按钮
-        const actionButtons = document.getElementById('action-buttons');
-        if (actionButtons) {
-            actionButtons.style.display = 'block';
-            actionButtons.classList.remove('d-none');
-            console.log('action-buttons 元素:', actionButtons);
-            console.log('action-buttons 已显示');
-        } else {
-            console.error('未找到 action-buttons 元素，请检查 ID');
-        }
-    })
-    .catch(err => {
-        console.error('请求失败:', err);
-        alert('无法获取药品编号，请检查后端服务');
-    });
-}
+        // 插入标题
+        const title = document.createElement('h3');
+        title.className = 'mb-3';
 
-// 复制表格为 Excel 可识别格式
-function copyTable() {
-    const table = document.getElementById('materials-table');
-    let text = '';
-    const rows = table.querySelectorAll('tr');
+        // 插入 DOM
+        const container = document.createElement('div');
+        container.innerHTML = '';
+        container.appendChild(title);
+        container.appendChild(table);
+        container.appendChild(buttons);
 
-    rows.forEach(row => {
-        const cells = row.querySelectorAll('td, th');
-        const rowText = Array.from(cells).map(cell => cell.innerText).join('\t');
-        text += rowText + '\n';
-    });
+        // 插入页面
+        document.querySelector('#materials-table').parentNode.appendChild(container);
 
-    navigator.clipboard.writeText(text)
-        .then(() => alert('表格已复制！可以直接粘贴到 Excel 中。'))
-        .catch(err => console.error('复制失败:', err));
-}
-
-// 复制表格为图片到剪贴板
-function copyTableAsImage() {
-    domtoimage.toPng(document.getElementById('materials-table'))
-        .then(dataUrl => {
-            navigator.clipboard.write([
-                new ClipboardItem({
-                    'image/png': fetch(dataUrl).then(response => response.blob())
-                })
-            ]).then(() => {
-                alert('表格图片已复制到剪贴板！');
-            }).catch(err => {
-                console.error('复制图片失败:', err);
+        // 发起请求获取药品编码
+        fetch(API_URL, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.cookie.split('=')[1].split(';')[0]
+            },
+            body: JSON.stringify({ materials: data })
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('网络请求失败');
+            }
+            return response.json();
+        })
+        .then(result => {
+            const table = document.getElementById(tableId);
+            table.innerHTML = '';
+            const namesRow = document.createElement('tr');
+            result.forEach(item => {
+                const td = document.createElement('td');
+                td.innerText = i === 1 ? item.name : item.code;
+                namesRow.appendChild(td);
             });
+            const totalNameTd = document.createElement('td');
+            totalNameTd.innerText = '总计';
+            namesRow.appendChild(totalNameTd);
+            table.appendChild(namesRow);
+
+            const valuesRow = document.createElement('tr');
+            data.forEach(item => {
+                const td = document.createElement('td');
+                td.innerText = item.amount;
+                valuesRow.appendChild(td);
+            });
+            const totalTd = document.createElement('td');
+            const totalAmount = data.reduce((sum, item) => sum + item.amount, 0);
+            totalTd.innerText = totalAmount.toFixed(4); // 保留小数点后 6 位
+            valuesRow.appendChild(totalTd);
+            table.appendChild(valuesRow);
+
+            // 显示按钮
+            const actionButtons = document.getElementById(buttonsId);
+            if (actionButtons) {
+                actionButtons.style.display = 'block';
+                actionButtons.classList.remove('d-none');
+            } else {
+                console.error('未找到 action-buttons 元素，请检查 ID');
+            }
         })
         .catch(err => {
-            console.error('生成图片失败:', err);
+            console.error('请求失败:', err);
+            alert('无法获取药品编号，请检查后端服务');
         });
+    }
 }
 
-// 下载表格为图片
-function downloadTableAsImage() {
-    domtoimage.toBlob(document.getElementById('materials-table'))
-        .then(blob => {
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'material-record.png';
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-        })
-        .catch(err => {
-            console.error('生成图片失败:', err);
+function copyTable(tableIndex = 0) {
+    const table = document.getElementById(`materials-table-${tableIndex}`);
+    const rows = table.querySelectorAll("tr");
+    let tsvContent = "";
+    rows.forEach((row) => {
+        const cells = row.querySelectorAll("td");
+        const rowValues = Array.from(cells).map(cell => {
+            const text = cell.textContent.trim();
+            if (text.endsWith("克")) {
+                return parseFloat(text.replace(/克/g, ""));
+            }
+            return text;
         });
+        tsvContent += rowValues.join("\t") + "\n";
+    });
+    const temp = document.createElement("textarea");
+    temp.value = tsvContent;
+    document.body.appendChild(temp);
+    temp.select();
+    document.execCommand("copy");
+    document.body.removeChild(temp);
+    alert("表格已复制为可粘贴到 Excel 的格式");
 }
 
-// 清空所有数据并隐藏按钮（可选）
-function resetForm() {
-    document.getElementById('material-form').innerHTML = `
-        <div class="row mb-2" id="material-row">
-            <div class="col-md-4">
-                <input type="text" class="form-control" placeholder="药品名称" name="medicine[]">
-            </div>
-            <div class="col-md-4">
-                <input type="number" class="form-control" placeholder="克数" name="amount[]">
-            </div>
-            <div class="col-md-2">
-                <button class="btn btn-success" onclick="addRow()">添加材料</button>
-            </div>
-        </div>
-    `;
-    document.getElementById('materials-table').innerHTML = '';
-    document.getElementById('action-buttons').style.display = 'none';
+function copyTableAsImage(tableIndex = 0) {
+    const element = document.getElementById(`materials-table-${tableIndex}`);
+    html2canvas(element).then(canvas => {
+        canvas.toBlob(blob => {
+            if (!blob) return;
+            const clipboardItem = new ClipboardItem({ 'image/png': blob });
+            navigator.clipboard.write([clipboardItem])
+                .then(() => {
+                    alert('表格图片已复制到剪贴板！');
+                })
+                .catch(err => {
+                    console.error('复制图片失败:', err);
+                });
+        }, 'image/png');
+    }).catch(err => {
+        console.error('生成图片失败:', err);
+    });
+}
+
+function downloadTableAsImage(tableIndex = 0) {
+    const element = document.getElementById(`materials-table-${tableIndex}`);
+    html2canvas(element).then(canvas => {
+        const image = canvas.toDataURL('image/png');
+        const link = document.createElement('a');
+        link.href = image;
+        link.download = `material-record-${tableIndex}.png`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }).catch(err => {
+        console.error('生成图片失败:', err);
+    });
 }
