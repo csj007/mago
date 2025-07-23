@@ -41,6 +41,9 @@ views.py
 urls.py
 list.html
 settings.py
+login.html
+register.html
+forms.py
 
 
 pip install gunicorn
