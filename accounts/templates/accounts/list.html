@@ -1,18 +1,33 @@
 <!-- accounts/templates/accounts/list.html -->
 {% extends "base.html" %}
-
+{% load static %}
 {% block title %}药品管理 - 列表{% endblock %}
-
 {% block content %}
     <h3 class="mb-4">药品管理</h3>
     <a href="{% url 'add_medicine' %}" class="btn btn-primary mb-3">新增药品</a>
+    <a href="{% url 'export_medicine' %}" class="btn btn-success mb-3">一键导出</a>
 
     <table class="table table-bordered table-hover">
         <thead class="table-dark">
             <tr>
-                <th scope="col">种类</th>
-                <th scope="col">名称</th>
-                <th scope="col">编号</th>
+                <th scope="col">
+                    <a href="?order_by=type{{ sort_arrow }}">
+                        种类
+                        <i class="fas fa-sort{% if order_by == 'type' %}{{ sort_icon %}{% endif %}"></i>
+                    </a>
+                </th>
+                <th scope="col">
+                    <a href="?order_by=name{{ sort_arrow }}">
+                        名称
+                        <i class="fas fa-sort{% if order_by == 'name' %}{{ sort_icon %}{% endif %}"></i>
+                    </a>
+                </th>
+                <th scope="col">
+                    <a href="?order_by=code{{ sort_arrow }}">
+                        编号
+                        <i class="fas fa-sort{% if order_by == 'code' %}{{ sort_icon %}{% endif %}"></i>
+                    </a>
+                </th>
                 <th scope="col" style="width: 120px;">操作</th>
             </tr>
         </thead>
@@ -35,4 +50,7 @@
             {% endfor %}
         </tbody>
     </table>
+
+    <!-- Font Awesome 图标库 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
 {% endblock %}
