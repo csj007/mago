@@ -13,7 +13,12 @@ from urllib.parse import urlencode
 import datetime
 import csv
 from django.http import HttpResponse
+from django.contrib.auth.models import User, Group
+from .forms import RegisterForm
+
+
 LOG_FILE_PATH = os.path.join(os.path.dirname(__file__), 'medicine_logs.txt')
+
 
 
 def user_login(request):
@@ -38,6 +43,30 @@ def user_login(request):
 def user_logout(request):
     logout(request)
     return redirect('login')
+
+def register(request):
+    if request.method == 'POST':
+        form = RegisterForm(request.POST)
+        if form.is_valid():
+            username = form.cleaned_data['username']
+            password = form.cleaned_data['password1']
+
+            # 创建用户
+            user = User.objects.create_user(username=username, password=password)
+            user.save()
+
+            # 将用户加入“普通用户”组
+            common_group, created = Group.objects.get_or_create(name='普通用户')
+            user.groups.add(common_group)
+
+            # 添加注册成功提示
+            messages.success(request, '注册成功，请登录！')
+
+            # 跳转到登录页面
+            return redirect('login')
+    else:
+        form = RegisterForm()
+    return render(request, 'accounts/register.html', {'form': form})
 
 @login_required
 def home(request):
