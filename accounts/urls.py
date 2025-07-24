@@ -13,5 +13,6 @@ urlpatterns = [
     path('export/', views.export_medicine, name='export_medicine'),
     path('home/', views.home, name='home'),
     path('api/get-medicine-codes/', views.get_medicine_codes, name='get_medicine_codes'),
+    path('api/find_medicine_codes/', views.find_medicine_codes, name='find_medicine_codes'),
     path('register/', views.register, name='register'),
 ]
