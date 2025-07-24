@@ -6,8 +6,7 @@
     <h3 class="mb-4">药品管理</h3>
     <a href="{% url 'add_medicine' %}" class="btn btn-primary mb-3">新增药品</a>
     <a href="{% url 'export_medicine' %}" class="btn btn-success mb-3">一键导出</a>
-
-    <table class="table table-bordered table-hover">
+    <table class="table table-bordered table-hover" style="width: 100%;">
         <thead class="table-dark">
             <tr>
                 <th scope="col">
@@ -28,6 +27,36 @@
                         <i class="fas fa-sort{% if order_by == 'code' %}{{ sort_icon %}{% endif %}"></i>
                     </a>
                 </th>
+                <th scope="col">
+                    <a href="?order_by=cas_number{{ sort_arrow }}">
+                        CAS号
+                        <i class="fas fa-sort{% if order_by == 'cas_number' %}{{ sort_icon %}{% endif %}"></i>
+                    </a>
+                </th>
+                <th scope="col">
+                    <a href="?order_by=specification{{ sort_arrow }}">
+                        规格
+                        <i class="fas fa-sort{% if order_by == 'specification' %}{{ sort_icon %}{% endif %}"></i>
+                    </a>
+                </th>
+                <th scope="col">
+                    <a href="?order_by=unit{{ sort_arrow }}">
+                        单位
+                        <i class="fas fa-sort{% if order_by == 'unit' %}{{ sort_icon %}{% endif %}"></i>
+                    </a>
+                </th>
+                <th scope="col">
+                    <a href="?order_by=quantity{{ sort_arrow }}">
+                        数量
+                        <i class="fas fa-sort{% if order_by == 'quantity' %}{{ sort_icon %}{% endif %}"></i>
+                    </a>
+                </th>
+                <th scope="col">
+                    <a href="?order_by=manufacturer{{ sort_arrow }}">
+                        生产厂家
+                        <i class="fas fa-sort{% if order_by == 'manufacturer' %}{{ sort_icon %}{% endif %}"></i>
+                    </a>
+                </th>
                 <th scope="col" style="width: 120px;">操作</th>
             </tr>
         </thead>
@@ -37,6 +66,11 @@
                 <td>{{ medicine.get_type_display }}</td>
                 <td>{{ medicine.name }}</td>
                 <td>{{ medicine.code }}</td>
+                <td>{{ medicine.cas_number|default:"—" }}</td>
+                <td>{{ medicine.specification|default:"—" }}</td>
+                <td>{{ medicine.unit|default:"—" }}</td>
+                <td>{{ medicine.quantity|default:"—" }}</td>
+                <td>{{ medicine.manufacturer|default:"—" }}</td>
                 <td>
                     <a href="{% url 'edit_medicine' medicine.id %}" class="btn btn-sm btn-info">编辑</a>
                     <form action="{% url 'delete_medicine' medicine.id %}" method="post" style="display:inline;">
@@ -50,7 +84,6 @@
             {% endfor %}
         </tbody>
     </table>
-
     <!-- Font Awesome 图标库 -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
 {% endblock %}
