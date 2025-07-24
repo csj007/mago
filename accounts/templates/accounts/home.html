@@ -28,6 +28,34 @@
         .table {
             border-collapse: collapse;
         }
+        .hover-item:hover {
+            background-color: #f0f0f0;
+            cursor: pointer;
+        }
+        #custom-medicine-list, #manufacturer-popup {
+            z-index: 1000;
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid #ccc;
+            background: white;
+        }
+        #cas-popup {
+            z-index: 1002;
+            max-height: 150px;
+            overflow-y: auto;
+            border: 1px solid #ccc;
+            background: white;
+        }
+        
+        #manufacturer-popup,
+        #cas-popup {
+            position: absolute;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        .active {
+            background-color: #0d6efd !important;
+            color: white !important;
+        }
     </style>
 </head>
 <body>
@@ -39,15 +67,9 @@
                     <input
                         type="text"
                         class="form-control"
-                        name="medicine[]"
-                        list="medicine-list"
+                        id="medicine-search"
                         placeholder="选择或输入药品名称"
                     >
-                    <datalist id="medicine-list">
-                        {% for medicine in medicines %}
-                            <option value="{{ medicine.name }}">
-                        {% endfor %}
-                    </datalist>
                 </div>
                 <div class="col-md-4">
                     <input type="number" class="form-control" placeholder="克数" name="amount[]">
@@ -57,6 +79,13 @@
                     <button class="btn btn-danger" onclick="deleteRow(this)">删除材料</button>
                 </div>
             </div>
+        </div>
+        <div id="custom-medicine-list" class="position-absolute d-none" style="z-index: 1000; background: white; border: 1px solid #ccc; max-height: 200px; overflow-y: auto;"></div>
+        <div id="manufacturer-popup" class="position-absolute d-none border shadow-sm"
+            style="z-index: 1001; background: white; max-height: 150px; overflow-y: auto;">
+        </div>
+        <div id="cas-popup" class="position-absolute d-none border shadow-sm"
+            style="z-index: 1002; background: white; max-height: 150px; overflow-y: auto;">
         </div>
         <button class="btn btn-primary mb-4" onclick="submitRecord()">提交记录</button>
 
