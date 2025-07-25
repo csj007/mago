@@ -2,9 +2,8 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login, logout
 from django.contrib import messages
-from .forms import LoginForm
-from .models import Medicine
-from .forms import MedicineForm
+from .forms import LoginForm, MedicineForm
+from .models import Medicine, Recipe, RecipeItem
 from django.views.decorators.csrf import csrf_exempt
 import json
 import os
@@ -19,6 +18,9 @@ from django.http import HttpResponse, JsonResponse
 from pypinyin import lazy_pinyin
 from django.views.decorators.http import require_POST
 from django.db.models.functions import Upper
+from django.core.exceptions import ObjectDoesNotExist
+
+
 LOG_FILE_PATH = os.path.join(os.path.dirname(__file__), 'medicine_logs.txt')
 
 
@@ -280,3 +282,100 @@ def find_medicine_codes(request):
 
     # 第四步：仍然不唯一
     return JsonResponse({'code': name})
+
+@login_required
+def save_recipe(request):
+    if request.method == 'POST':
+        data = json.loads(request.body)
+        name = data.get('name')
+        items = data.get('items')
+        user = request.user
+
+        # ✅ 检查用户是否已有同名配方
+        if Recipe.objects.filter(user=user, name=name).exists():
+            return JsonResponse({'status': 'error', 'message': '配方名称已存在'}, status=400)
+
+        # 正常创建配方
+        recipe = Recipe.objects.create(name=name, user=user)
+        for item in items:
+            RecipeItem.objects.create(
+                recipe=recipe,
+                name=item['name'],
+                manufacturer=item['manufacturer'],
+                cas=item['cas'],
+                amount=item['amount']
+            )
+        return JsonResponse({'status': 'success', 'recipe_id': recipe.id})
+
+@login_required
+def load_recipe(request, recipe_id):
+    recipe = get_object_or_404(Recipe, id=recipe_id, user=request.user)
+    items = [
+        {
+            'name': item.name,
+            'manufacturer': item.manufacturer,
+            'cas': item.cas,
+            'amount': item.amount
+        }
+        for item in recipe.items.all()
+    ]
+    return JsonResponse({'items': items})
+
+@login_required
+def list_recipes(request):
+    recipes = Recipe.objects.filter(user=request.user).prefetch_related('items')
+    data = [
+        {
+            'id': recipe.id,
+            'name': recipe.name,
+            'items': [{
+                'name': item.name,
+                'amount': item.amount,
+                'manufacturer': item.manufacturer or '',
+                'cas': item.cas or ''
+            } for item in recipe.items.all()]
+        }
+        for recipe in recipes
+    ]
+    return JsonResponse({'recipes': data})
+
+@login_required
+def search_recipes(request):
+    query = request.GET.get('q', '')
+    recipes = Recipe.objects.filter(name__icontains=query, user=request.user).values('id', 'name')
+    return JsonResponse({'recipes': list(recipes)})
+
+@login_required
+def delete_recipe(request, recipe_id):
+    if request.method == "DELETE":
+        try:
+            recipe = Recipe.objects.get(id=recipe_id, user=request.user)
+            recipe.delete()
+            return JsonResponse({"status": "success", "message": "配方已删除"})
+        except ObjectDoesNotExist:
+            return JsonResponse({"status": "error", "message": "配方不存在或无权操作"}, status=404)
+    return JsonResponse({"status": "error", "message": "请求方法不支持"}, status=405)
+
+@login_required
+def rename_recipe(request, recipe_id):
+    if request.method == 'POST':
+        data = json.loads(request.body)
+        new_name = data.get('name')
+        if not new_name:
+            return JsonResponse({'status': 'error', 'message': '请提供配方名称'}, status=400)
+
+        try:
+            recipe = Recipe.objects.get(id=recipe_id, user=request.user)
+
+            # 检查新名称是否已存在（排除当前配方）
+            if Recipe.objects.filter(user=request.user, name=new_name).exclude(id=recipe.id).exists():
+                return JsonResponse({'status': 'error', 'message': '该配方名称已存在，请换一个名称'}, status=400)
+
+            # 重命名并保存
+            recipe.name = new_name
+            recipe.save()
+
+            return JsonResponse({'status': 'success', 'message': '配方名称已更新'})
+        except Recipe.DoesNotExist:
+            return JsonResponse({'status': 'error', 'message': '配方不存在或无权操作'}, status=404)
+    return JsonResponse({'status': 'error', 'message': '请求方法不支持'}, status=405)
