@@ -56,10 +56,109 @@
             background-color: #0d6efd !important;
             color: white !important;
         }
+        .list-group-item.selected {
+            background-color: #0d6efd !important;
+            color: white !important;
+            font-weight: bold;
+        }
+        .recipe-preview {
+            display: none;
+            margin-top: 5px;
+            background-color: #f8f9fa;
+            padding: 8px 12px;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            position: relative;
+            z-index: 10;
+            max-height: 150px;
+            overflow-y: auto;
+            word-break: break-word;
+        }
+        .recipe-preview p {
+            margin: 0;
+            padding: 2px 0;
+        }
+        .tooltip-inner {
+            min-width: 400px;
+            max-width: 500px; /* 调大宽度 */
+            white-space: pre-line; /* 支持自动换行 */
+            font-size: 0.9rem;
+            padding: 8px 12px;
+            background-color: #000000;
+            color: white;
+            border-radius: 6px;
+        }
+        
+        .tooltip.bs-tooltip-right .arrow::before {
+            border-right-color: #000000;
+        }
     </style>
 </head>
 <body>
     <div class="container">
+        <div class="modal fade" id="archiveModal" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">保存为配方</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <input type="text" id="archive-name-input" class="form-control" placeholder="输入配方名称">
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                        <button type="button" class="btn btn-primary" onclick="saveAsRecipe()">保存</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 加载配方模态框 -->
+        <div class="modal fade" id="loadRecipeModal" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">加载配方</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <input type="text" id="recipe-search-input" class="form-control mb-2" placeholder="搜索配方">
+                        <ul id="recipe-list" class="list-group" style="max-height: 200px; overflow-y: auto;"></ul>
+                        <div class="d-flex justify-content-between mt-2">
+                            <button type="button" id="delete-recipe-btn" class="btn btn-danger d-none" onclick="deleteSelectedRecipe()">删除配方</button>
+                            <button type="button" id="rename-recipe-btn" class="btn btn-warning d-none" onclick="openRenameModal()">重命名</button>
+                            <button type="button" id="load-recipe-btn" class="btn btn-success d-none" onclick="loadSelectedRecipe()">载入配方</button>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 重命名模态框 -->
+            <div class="modal fade" id="renameRecipeModal" tabindex="-1">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">重命名配方</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <input type="text" id="new-recipe-name" class="form-control" placeholder="输入新名称">
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                            <button type="button" class="btn btn-primary" onclick="renameSelectedRecipe()">确认重命名</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
         <h2 class="mb-4">添加材料</h2>
         <div id="material-form">
             <div class="row mb-2" id="material-row">
@@ -88,12 +187,14 @@
             style="z-index: 1002; background: white; max-height: 150px; overflow-y: auto;">
         </div>
         <button class="btn btn-primary mb-4" onclick="submitRecord()">提交记录</button>
-
+        <button class="btn btn-primary mb-4" onclick="openLoadRecipeModal()">加载配方</button>
+        
         <!-- 按钮容器，默认隐藏 -->
         <div id="action-buttons" class="d-none mt-3">
             <button class="btn btn-success" onclick="copyTable()">复制表格</button>
             <button class="btn btn-info" onclick="copyTableAsImage()">复制图片</button>
             <button class="btn btn-primary" onclick="downloadTableAsImage()">下载图片</button>
+            <button class="btn btn-warning" onclick="openArchiveModal()">归档</button>
         </div>
 
         <h3 class="mb-3">材料记录</h3>
