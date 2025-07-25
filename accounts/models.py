@@ -1,6 +1,8 @@
 from django.db import models
 from django.core.exceptions import ValidationError
 from django.db.models import UniqueConstraint
+from django.contrib.auth.models import User
+
 
 class Medicine(models.Model):
     TYPE_CHOICES = (
@@ -48,3 +50,19 @@ class Medicine(models.Model):
 
     def __str__(self):
         return f"{self.name} - {self.code}"
+
+
+class Recipe(models.Model):
+    name = models.CharField(max_length=255, verbose_name="配方名称")
+    created_at = models.DateTimeField(auto_now_add=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='recipes')
+
+    def __str__(self):
+        return self.name
+
+class RecipeItem(models.Model):
+    recipe = models.ForeignKey(Recipe, on_delete=models.CASCADE, related_name='items')
+    name = models.CharField(max_length=255, verbose_name="药品名称")
+    manufacturer = models.CharField(max_length=255, null=True, blank=True, verbose_name="厂商")
+    cas = models.CharField(max_length=255, null=True, blank=True, verbose_name="CAS")
+    amount = models.FloatField(default=0, verbose_name="克数")
