@@ -1,9 +1,9 @@
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required, user_passes_test
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login, logout
 from django.contrib import messages
 from .forms import LoginForm, MedicineForm
-from .models import Medicine, Recipe, RecipeItem
+from .models import Medicine, Recipe, RecipeItem, UserActivity
 from django.views.decorators.csrf import csrf_exempt
 import json
 import os
@@ -19,10 +19,83 @@ from pypinyin import lazy_pinyin
 from django.views.decorators.http import require_POST
 from django.db.models.functions import Upper
 from django.core.exceptions import ObjectDoesNotExist
-
+from django.utils import timezone
+from django.core.paginator import Paginator
 
 LOG_FILE_PATH = os.path.join(os.path.dirname(__file__), 'medicine_logs.txt')
 
+def is_superuser_group(user):
+    return user.groups.filter(name="超级用户").exists()
+@login_required
+@user_passes_test(is_superuser_group)
+def user_activity_report(request):
+    # === 用户概览数据（顶部表格）===
+    users = User.objects.all().select_related()
+    user_data = []
+
+    for user in users:
+        if user.groups.filter(name="超级用户").exists() and not user.is_superuser:
+            continue  # 如果你希望排除所有超级用户组成员，包括自己
+        
+        last_login = None
+        activity_count = UserActivity.objects.filter(user=user).count()
+
+        last_login_record = UserActivity.objects.filter(
+            user=user, activity_type='login'
+        ).order_by('-timestamp').first()
+        if last_login_record:
+            last_login = timezone.localtime(last_login_record.timestamp)
+
+        user_data.append({
+            'user': user,
+            'last_login': last_login,
+            'activity_count': activity_count,
+        })
+
+    # === 操作记录查询 + 分页 ===
+    query_username = request.GET.get('username', '').strip()
+    user_activities = None
+    paginator = None
+    page_obj = None
+    per_page = 20  # 默认每页 20 条
+
+    if query_username:
+        try:
+            target_user = User.objects.get(username=query_username)
+            activities = UserActivity.objects.filter(user=target_user).order_by('-timestamp')
+
+            # 获取每页显示数量
+            per_page = request.GET.get('per_page', 20)
+            try:
+                per_page = int(per_page)
+                if per_page not in [20, 50, 100]:
+                    per_page = 20
+            except ValueError:
+                per_page = 20
+
+            # 分页
+            paginator = Paginator(activities, per_page)  # 每页 N 条
+            page_number = request.GET.get('page')
+            page_obj = paginator.get_page(page_number)
+
+            # 截断最多 100,000 条（防内存爆炸）
+            if paginator.count > 100000:
+                # 重新分页前 10 万条
+                activities = activities[:100000]
+                paginator = Paginator(activities, per_page)
+                page_obj = paginator.get_page(page_number)
+
+        except User.DoesNotExist:
+            page_obj = []
+
+    return render(request, 'accounts/user_activity.html', {
+        'user_data': user_data,
+        'query_username': query_username,
+        'user_activities': page_obj,           # 分页后的对象
+        'paginator': paginator,
+        'page_obj': page_obj,
+        'per_page': per_page,
+    })
 
 def user_login(request):
     if request.method == 'POST':
@@ -95,7 +168,20 @@ def edit_medicine(request, medicine_id):
                 action='编辑',
                 medicine_info=f"原: {old_name} - {old_code}, 现: {new_name} - {new_code}"
             )
-            return redirect('medicine_list')
+            #return redirect('medicine_list')
+            # by haoxin
+            return JsonResponse({
+                'status': 'success',
+                'message': '药品信息已更新！',
+                'redirect_url': '/medicine/list/'  # 或 reverse('medicine_list')
+            })
+        else:
+            return JsonResponse({
+                'status': 'error',
+                'message': '请修正以下错误',
+                'errors': dict(form.errors)  # 关键：把字段错误转成字典
+            }, status=400)
+        # end
     else:
         form = MedicineForm(instance=medicine)
     return render(request, 'accounts/edit.html', {'form': form})
