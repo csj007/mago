@@ -31,6 +31,12 @@ ALLOWED_HOSTS = ['*']
 
 LOGIN_URL = '/login/'
 
+# 设置为北京时间
+TIME_ZONE = 'Asia/Shanghai'
+
+# 日期时间字段使用国际标准时间（存储为 UTC）
+USE_TZ = True
+
 # Application definition
 
 INSTALLED_APPS = [
@@ -51,6 +57,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    'accounts.middleware.ActivityLoggingMiddleware', 
 ]
 
 ROOT_URLCONF = "mysite.urls"
