@@ -2,7 +2,7 @@ from django.db import models
 from django.core.exceptions import ValidationError
 from django.db.models import UniqueConstraint
 from django.contrib.auth.models import User
-
+from django.utils import timezone
 
 class Medicine(models.Model):
     TYPE_CHOICES = (
@@ -60,9 +60,41 @@ class Recipe(models.Model):
     def __str__(self):
         return self.name
 
+
 class RecipeItem(models.Model):
     recipe = models.ForeignKey(Recipe, on_delete=models.CASCADE, related_name='items')
     name = models.CharField(max_length=255, verbose_name="药品名称")
     manufacturer = models.CharField(max_length=255, null=True, blank=True, verbose_name="厂商")
     cas = models.CharField(max_length=255, null=True, blank=True, verbose_name="CAS")
     amount = models.FloatField(default=0, verbose_name="克数")
+    
+
+class UserActivity(models.Model):
+    # 操作类型
+    ACTIVITY_LOGIN = 'login'
+    ACTIVITY_LOGOUT = 'logout'
+    ACTIVITY_VIEW = 'view'
+    ACTIVITY_EDIT = 'edit'
+    ACTIVITY_DELETE = 'delete'
+    ACTIVITY_CHOICES = [
+        (ACTIVITY_LOGIN, '用户登录'),
+        (ACTIVITY_LOGOUT, '用户登出'),
+        (ACTIVITY_VIEW, '访问页面'),
+        (ACTIVITY_EDIT, '编辑操作'),
+        (ACTIVITY_DELETE, '删除操作'),
+    ]
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="用户")
+    activity_type = models.CharField("操作类型", max_length=20, choices=ACTIVITY_CHOICES)
+    ip_address = models.GenericIPAddressField("IP 地址", blank=True, null=True)
+    user_agent = models.TextField("User Agent", blank=True, null=True)
+    timestamp = models.DateTimeField("时间", default=timezone.now)
+    details = models.TextField("详情", blank=True, null=True)  # 比如访问了哪个页面
+
+    class Meta:
+        verbose_name = "用户行为记录"
+        verbose_name_plural = "用户行为记录"
+        ordering = ['-timestamp']
+
+    def __str__(self):
+        return f"{self.user.username} - {self.get_activity_type_display()} at {self.timestamp}"
