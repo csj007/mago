@@ -1,14 +1,106 @@
 <!-- accounts/templates/accounts/edit.html -->
 {% extends "base.html" %}
-
 {% block title %}编辑药品{% endblock %}
-
 {% block content %}
     <h3 class="mb-4">编辑药品</h3>
-    <form method="post" class="mb-5">
+    <form id="edit-medicine-form" method="post">
         {% csrf_token %}
         {{ form.as_p }}
         <button type="submit" class="btn btn-primary">更新</button>
         <a href="{% url 'medicine_list' %}" class="btn btn-secondary">返回</a>
     </form>
+
+    <!-- 成功提示模态框（使用 Bootstrap） -->
+    <div class="modal fade" id="successModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">操作成功</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>药品信息已更新！</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" data-bs-dismiss="modal" id="confirm-redirect">确定</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 前端脚本 -->
+    <script>
+        document.getElementById('edit-medicine-form').addEventListener('submit', function (e) {
+            e.preventDefault(); // 阻止默认提交
+
+            const form = this;
+            const formData = new FormData(form);
+            const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+            fetch(window.location.href, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': csrftoken,
+                    'Accept': 'application/json'  // 告诉后端我们想要 JSON
+                }
+            })
+            .then(response => {
+                // ✅ 无论 200 还是 400，都尝试解析 JSON
+                return response.json().then(data => {
+                    if (response.ok) {
+                        // 成功：status 200-299
+                        return { status: 'success', data };
+                    } else {
+                        // 失败：如 400，但 data 包含 errors
+                        return { status: 'error', data };
+                    }
+                });
+            })
+            .then(result => {
+                if (result.status === 'success') {
+                    const modal = new bootstrap.Modal(document.getElementById('successModal'));
+                    modal.show();
+
+                    document.getElementById('confirm-redirect').onclick = function () {
+                        window.location.href = "{% url 'medicine_list' %}";
+                    };
+
+                } else if (result.status === 'error') {
+                    const data = result.data;
+
+                    // 显示字段错误
+                    if (data.errors) {
+                        form.querySelectorAll('.text-danger.field-error').forEach(el => el.remove());
+
+                        for (const [field, errors] of Object.entries(data.errors)) {
+                            const fieldInput = form.querySelector(`[name="${field}"]`);
+                            if (!fieldInput) continue;
+
+                            const errorEl = document.createElement('div');
+                            errorEl.className = 'text-danger field-error small mt-1';
+                            errorEl.textContent = Array.isArray(errors) ? errors.join(', ') : errors;
+                            fieldInput.parentNode.appendChild(errorEl);
+
+                            // 可选：添加红色边框（Bootstrap 风格）
+                            fieldInput.classList.add('is-invalid');
+                        }
+
+                        // 可选：滚动到第一个错误
+                        const firstError = form.querySelector('.field-error');
+                        if (firstError) {
+                            firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        }
+                    } else {
+                        alert(data.message || '提交失败，请检查表单。');
+                    }
+                }
+            })
+            .catch(error => {
+                // 真正的网络错误（如断网、500 无法解析 JSON）
+                alert('请求失败：' + (error.message || '网络错误'));
+                console.error('Fetch error:', error);
+            });
+        });
+    </script>
 {% endblock %}
