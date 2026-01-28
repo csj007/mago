@@ -13,7 +13,14 @@ class LoginForm(forms.Form):
 class MedicineForm(forms.ModelForm):
     class Meta:
         model = Medicine
-        fields = ['type', 'name', 'code']
+        fields = ['type', 'name', 'code', 'cas_number', 'specification', 'unit', 'quantity', 'manufacturer']
+        widgets = {
+            'cas_number': forms.TextInput(attrs={'placeholder': '可选'}),
+            'specification': forms.TextInput(attrs={'placeholder': '可选'}),
+            'unit': forms.TextInput(attrs={'placeholder': '可选'}),
+            'quantity': forms.NumberInput(attrs={'placeholder': '可选'}),
+            'manufacturer': forms.TextInput(attrs={'placeholder': '可选'}),
+        }
 
 
 class RegisterForm(forms.Form):
