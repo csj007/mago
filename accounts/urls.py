@@ -21,4 +21,5 @@ urlpatterns = [
     path('api/search_recipes/', views.search_recipes, name='search_recipes'),
     path('api/delete_recipe/<int:recipe_id>/', views.delete_recipe, name='delete_recipe'),
     path('api/rename_recipe/<int:recipe_id>/', views.rename_recipe, name='rename_recipe'),
+    path('activity/', views.user_activity_report, name='user_activity'),
 ]
